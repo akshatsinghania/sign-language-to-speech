@@ -1,8 +1,8 @@
 import React, { useRef } from "react";
+// import logo from './logo.svg';
 import * as tf from "@tensorflow/tfjs";
 import * as handpose from "@tensorflow-models/handpose";
 import Webcam from "react-webcam";
-//import logo from "./logo.svg";
 import "./App.css";
 
 function App() {
@@ -12,6 +12,36 @@ function App() {
   const runHandpose = async () => {
     const net = await handpose.load();
     console.log("Handpose model loaded.");
+
+    setInterval(() => {
+      detect(net);
+    }, 100);
+    // Loop and detect hands
+  };
+
+  const detect = async (net) => {
+    if (
+      typeof webcamRef.current !== "undefined" &&
+      webcamRef.current !== null &&
+      webcamRef.current.video.readyState === 4
+    ) {
+      // Get Video Properties
+      const video = webcamRef.current.video;
+      const videoWidth = webcamRef.current.video.videoWidth;
+      const videoHeight = webcamRef.current.video.videoHeight;
+
+      // Set video width
+      webcamRef.current.video.width = videoWidth;
+      webcamRef.current.video.height = videoHeight;
+
+      // Set canvas height and width
+      canvasRef.current.width = videoWidth;
+      canvasRef.current.height = videoHeight;
+
+      // Make Detections
+      const hand = await net.estimateHands(video);
+      console.log(hand);
+    }
   };
 
   runHandpose();
