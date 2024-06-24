@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 // import logo from './logo.svg';
 import * as tf from "@tensorflow/tfjs";
 import * as handpose from "@tensorflow-models/handpose";
@@ -13,6 +13,9 @@ function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
 
+  const [emoji, setEmoji] = useState(null);
+  const images = { thumbs_up: thumbs_up, victory: victory };
+
   const runHandpose = async () => {
     const net = await handpose.load();
     console.log("Handpose model loaded.");
@@ -24,6 +27,7 @@ function App() {
   };
 
   const detect = async (net) => {
+    // Check data is available
     if (
       typeof webcamRef.current !== "undefined" &&
       webcamRef.current !== null &&
@@ -44,27 +48,48 @@ function App() {
 
       // Make Detections
       const hand = await net.estimateHands(video);
-      console.log(hand);
 
       if (hand.length > 0) {
         const GE = new fp.GestureEstimator([
           fp.Gestures.VictoryGesture,
           fp.Gestures.ThumbsUpGesture,
         ]);
+        const gesture = await GE.estimate(hand[0].landmarks, 4);
 
-        const gesture = await GE.estimate(hand[0].landmarks, 8);
-        console.log(gesture);
+        if (gesture.gestures !== undefined && gesture.gestures.length > 0) {
+          // console.log(gesture.gestures);
+
+          const confidence = gesture.gestures.map(
+            (prediction) => prediction.score
+          );
+          console.log(confidence);
+          console.log(Math.max(confidence));
+
+          const maxConfidence = confidence.indexOf(
+            Math.max.apply(null, confidence)
+          );
+          // console.log(maxConfidence);
+          // console.log(gesture.gestures[maxConfidence].name);
+          setEmoji(gesture.gestures[maxConfidence].name);
+          console.log(emoji);
+        }
       }
 
+      ///////// NEW STUFF ADDED GESTURE HANDLING
+
+      // Draw mesh
       const ctx = canvasRef.current.getContext("2d");
       drawHand(hand, ctx);
     }
   };
 
-  runHandpose();
+  useEffect(() => {
+    runHandpose();
+  }, []);
 
   return (
     <div className="App">
+      <h1>Detected = {emoji}</h1>
       <header className="App-header">
         <Webcam
           ref={webcamRef}
@@ -94,6 +119,24 @@ function App() {
             height: 480,
           }}
         />
+
+        {emoji !== null ? (
+          <img
+            src={images[emoji]}
+            style={{
+              position: "absolute",
+              marginLeft: "auto",
+              marginRight: "auto",
+              left: 400,
+              bottom: 500,
+              right: 0,
+              textAlign: "center",
+              height: 0,
+            }}
+          />
+        ) : (
+          ""
+        )}
       </header>
     </div>
   );
