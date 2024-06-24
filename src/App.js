@@ -70,19 +70,31 @@ function App() {
           );
           // console.log(maxConfidence);
           // console.log(gesture.gestures[maxConfidence].name);
-          setEmoji(gesture.gestures[maxConfidence].name);
+          var em = gesture.gestures[maxConfidence].name;
+          setEmoji(em);
+          if (em == "thumbs_up") {
+            handleSpeak("Okay");
+          } else if (em == "victory") {
+            handleSpeak("Peace");
+          }
           console.log(emoji);
         }
       }
 
-      ///////// NEW STUFF ADDED GESTURE HANDLING
-
-      // Draw mesh
       const ctx = canvasRef.current.getContext("2d");
       drawHand(hand, ctx);
     }
   };
+  const [speaking, setSpeaking] = useState(false);
 
+  const handleSpeak = (text1) => {
+    if ("speechSynthesis" in window) {
+      const utterance = new SpeechSynthesisUtterance(text1);
+      speechSynthesis.speak(utterance);
+    } else {
+      alert("Your browser does not support text-to-speech.");
+    }
+  };
   useEffect(() => {
     runHandpose();
   }, []);
